@@ -1,16 +1,34 @@
 'use strict'
 
-const Sql = require('sequelize')
+const { INTEGER, STRING, BLOB, BIGINT } = require('sequelize')
 
 module.exports = function (db) {
   const User = db.define('user', {
-    email: {
-      type: Sql.STRING,
+    id: {
+      type: INTEGER,
+      autoIncrement: true,
       primaryKey: true
     },
-    name: Sql.STRING,
-    password: Sql.BLOB
+    email: STRING,
+    passwordHash: BLOB,
+    name: STRING
   })
 
-  return { User }
+  const Transaction = db.define('transaction', {
+    type: STRING,
+    paid: BIGINT,
+    received: BIGINT,
+    address: STRING
+  })
+
+  const Wallet = db.define('wallet', {
+    encryptedSeed: BLOB,
+    salt: BLOB,
+    iv: BLOB
+  })
+
+  User.hasMany(Transaction)
+  User.hasMany(Wallet)
+
+  return { User, Transaction, Wallet }
 }
