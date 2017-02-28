@@ -20,8 +20,10 @@ const app = express()
 require('./src/routes.js')(app, models)
 
 async function main () {
+  const DEV = process.env.NODE_ENV === 'development'
+
   // connect to Postgres and sync tables
-  await db.sync()
+  await db.sync({ force: DEV })
   log.info('DB initialized')
 
   // start HTTP server
