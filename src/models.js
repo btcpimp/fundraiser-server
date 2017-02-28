@@ -9,7 +9,10 @@ module.exports = function (db) {
       autoIncrement: true,
       primaryKey: true
     },
-    email: STRING,
+    email: {
+      type: STRING,
+      unique: true
+    },
     passwordHash: BLOB,
     name: STRING
   })
