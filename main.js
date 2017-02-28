@@ -4,6 +4,10 @@
 
 const express = require('express')
 const Sql = require('sequelize')
+const helmet = require('helmet')
+const session = require('express-session')
+const SessionStore = require('connect-session-sequelize')(session.Store)
+const bodyParser = require('body-parser')
 const debug = require('debug')
 const log = {
   sql: debug('sql'),
@@ -11,16 +15,24 @@ const log = {
 }
 const config = require('./config.json')
 
-// set up Postgres
-const db = new Sql(config.db, { logging: log.sql })
-const models = require('./src/models.js')(db)
-
-// set up REST routes
-const app = express()
-require('./src/routes.js')(app, models)
-
 async function main () {
   const DEV = process.env.NODE_ENV === 'development'
+
+  // set up Postgres
+  const db = new Sql(config.db, { logging: log.sql })
+  const models = require('./src/models.js')(db)
+
+  // set up REST routes
+  const app = express()
+  app.use(helmet())
+  app.use(session({
+    secret: config.cookieSecret,
+    store: new SessionStore({ db }),
+    cookie: { secure: !DEV },
+    name: 'session'
+  }))
+  app.use(bodyParser.json())
+  require('./src/routes.js')(app, models)
 
   // connect to Postgres and sync tables
   await db.sync({ force: DEV })

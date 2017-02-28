@@ -1,4 +1,5 @@
 {
   "db": "postgres://user@localhost/database",
-  "port": 8000
+  "port": 8000,
+  "cookieSecret": ""
 }
