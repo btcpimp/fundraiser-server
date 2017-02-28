@@ -1,0 +1,4 @@
+{
+  "db": "postgres://user@localhost/database",
+  "port": 8000
+}
