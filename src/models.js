@@ -2,6 +2,8 @@
 
 const { INTEGER, STRING, BLOB, BIGINT } = require('sequelize')
 
+const unique = (type) => ({ type, unique: true })
+
 module.exports = function (db) {
   const User = db.define('user', {
     id: {
@@ -22,11 +24,12 @@ module.exports = function (db) {
     type: STRING,
     paid: BIGINT,
     received: BIGINT,
-    address: STRING
+    address: STRING,
+    txid: unique(BLOB)
   })
 
   const Wallet = db.define('wallet', {
-    encryptedSeed: BLOB,
+    encryptedSeed: unique(BLOB),
     salt: BLOB,
     iv: BLOB
   })
