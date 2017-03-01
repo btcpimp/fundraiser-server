@@ -14,6 +14,7 @@ module.exports = function (db) {
       unique: true
     },
     passwordHash: BLOB,
+    passwordSalt: BLOB,
     name: STRING
   })
 

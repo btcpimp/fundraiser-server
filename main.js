@@ -35,7 +35,7 @@ async function main () {
   require('./src/routes.js')(app, models)
 
   // connect to Postgres and sync tables
-  await db.sync({ force: DEV })
+  await db.sync()
   log.info('DB initialized')
 
   // start HTTP server
