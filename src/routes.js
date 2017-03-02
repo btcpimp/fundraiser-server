@@ -20,6 +20,13 @@ async function getWallets (user) {
   }))
 }
 
+async function getTransactions (user) {
+  let transactions = await user.getTransactions()
+  return transactions.map((tx) => Object.assign(tx, {
+    txid: tx.txid.toString('base64')
+  }))
+}
+
 function handleErrors (func) {
   return async function (req, res, next) {
     try {
@@ -28,6 +35,21 @@ function handleErrors (func) {
       res.status(400).json({ error: err.message })
     }
   }
+}
+
+async function getUser (req, res) {
+  let { email, displayName, id } = req.user
+  let wallets = await getWallets(req.user)
+  let transactions = await getTransactions(req.user)
+  res.json({ email, displayName, id, wallets, transactions })
+}
+
+function requireLogout (req, res, next) {
+  if (req.session.userId != null) {
+    let error = 'Already logged in'
+    return res.status(401).json({ error })
+  }
+  next()
 }
 
 module.exports = function (app, models) {
@@ -43,22 +65,15 @@ module.exports = function (app, models) {
     next()
   }
 
-  function requireLogout (req, res, next) {
-    if (req.session.userId != null) {
-      let error = 'Already logged in'
-      return res.status(401).json({ error })
-    }
-    next()
-  }
-
   app.post('/register', requireLogout, handleErrors(async (req, res) => {
-    let { email, name, password } = req.body
+    let { email, displayName, password } = req.body
     // TODO: validate fields
     let passwordSalt = await randomBytes(20)
     let passwordHash = await hashPassword(password, passwordSalt)
-    let { id } = await User.create({ email, name, passwordSalt, passwordHash })
-    req.session.userId = id
-    res.json({ id })
+    let user = await User.create({ email, displayName, passwordSalt, passwordHash })
+    req.session.userId = user.id
+    req.user = user
+    await getUser(req, res)
   }))
 
   app.post('/login', requireLogout, handleErrors(async (req, res) => {
@@ -74,9 +89,9 @@ module.exports = function (app, models) {
     let passwordHash = await hashPassword(password, user.passwordSalt)
     if (!passwordHash.equals(user.passwordHash)) return authError()
 
-    let { id, name } = user
-    req.session.userId = id
-    res.json({ id, email, name })
+    req.session.userId = user.id
+    req.user = user
+    await getUser(req, res)
   }))
 
   app.post('/logout', requireLogin, handleErrors(async (req, res) => {
@@ -116,7 +131,7 @@ module.exports = function (app, models) {
   }))
 
   app.get('/transactions', requireLogin, handleErrors(async (req, res) => {
-    let transactions = await req.user.getTransactions()
+    let transactions = await getTransactions(req.user)
     res.json(transactions)
   }))
 
@@ -125,10 +140,5 @@ module.exports = function (app, models) {
     res.json(wallets)
   }))
 
-  app.get('/user', requireLogin, handleErrors(async (req, res) => {
-    let { email, name, userId } = req.user
-    let wallets = await getWallets(req.user)
-    let transactions = await req.user.getTransactions()
-    res.json({ email, name, userId, wallets, transactions })
-  }))
+  app.get('/user', requireLogin, handleErrors(getUser))
 }
