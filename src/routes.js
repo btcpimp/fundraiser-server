@@ -11,6 +11,15 @@ async function hashPassword (password, salt) {
     Buffer(password), salt, 20000, 20, 'sha512')
 }
 
+async function getWallets (user) {
+  let wallets = await user.getWallets()
+  return wallets.map((wallet) => ({
+    encryptedSeed: wallet.encryptedSeed.toString('base64'),
+    salt: wallet.salt.toString('base64'),
+    iv: wallet.iv.toString('base64')
+  }))
+}
+
 module.exports = function (app, models) {
   let { User, Transaction, Wallet } = models
 
@@ -102,12 +111,14 @@ module.exports = function (app, models) {
   })
 
   app.get('/wallets', requireLogin, async (req, res) => {
-    let wallets = await req.user.getWallets()
-    wallets = wallets.map((wallet) => ({
-      encryptedSeed: wallet.encryptedSeed.toString('base64'),
-      salt: wallet.salt.toString('base64'),
-      iv: wallet.iv.toString('base64')
-    }))
+    let wallets = await getWallets(req.user)
     res.json(wallets)
+  })
+
+  app.get('/user', requireLogin, async (req, res) => {
+    let { email, name, userId } = req.user
+    let wallets = await getWallets(req.user)
+    let transactions = await req.user.getTransactions()
+    res.json({ email, name, userId, wallets, transactions })
   })
 }
