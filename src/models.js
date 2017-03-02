@@ -17,7 +17,7 @@ module.exports = function (db) {
     },
     passwordHash: BLOB,
     passwordSalt: BLOB,
-    name: STRING
+    displayName: STRING
   })
 
   const Transaction = db.define('transaction', {
