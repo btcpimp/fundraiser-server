@@ -5,6 +5,7 @@
 const express = require('express')
 const Sql = require('sequelize')
 const helmet = require('helmet')
+const cors = require('cors')
 const session = require('express-session')
 const SessionStore = require('connect-session-sequelize')(session.Store)
 const bodyParser = require('body-parser')
@@ -25,6 +26,10 @@ async function main () {
   // set up REST routes
   const app = express()
   app.use(helmet())
+  app.use(cors({
+    origin: DEV ? 'http://localhost:8600' : config.allowOrigin,
+    credentials: true
+  }))
   app.use(session({
     secret: config.cookieSecret,
     store: new SessionStore({ db }),
