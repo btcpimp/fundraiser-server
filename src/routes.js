@@ -20,6 +20,16 @@ async function getWallets (user) {
   }))
 }
 
+function handleErrors (func) {
+  return async function (req, res, next) {
+    try {
+      await func(req, res, next)
+    } catch (err) {
+      res.status(400).json({ error: err.message })
+    }
+  }
+}
+
 module.exports = function (app, models) {
   let { User, Transaction, Wallet } = models
 
@@ -41,7 +51,7 @@ module.exports = function (app, models) {
     next()
   }
 
-  app.post('/register', requireLogout, async (req, res) => {
+  app.post('/register', requireLogout, handleErrors(async (req, res) => {
     let { email, name, password } = req.body
     // TODO: validate fields
     let passwordSalt = await randomBytes(20)
@@ -49,9 +59,9 @@ module.exports = function (app, models) {
     let { id } = await User.create({ email, name, passwordSalt, passwordHash })
     req.session.userId = id
     res.json({ id })
-  })
+  }))
 
-  app.post('/login', requireLogout, async (req, res) => {
+  app.post('/login', requireLogout, handleErrors(async (req, res) => {
     let { email, password } = req.body
     let authError = () => {
       let error = 'Invalid login'
@@ -67,14 +77,14 @@ module.exports = function (app, models) {
     let { id, name } = user
     req.session.userId = id
     res.json({ id, email, name })
-  })
+  }))
 
-  app.post('/logout', requireLogin, async (req, res) => {
+  app.post('/logout', requireLogin, handleErrors(async (req, res) => {
     delete req.session.userId
     res.json({})
-  })
+  }))
 
-  app.post('/transaction', requireLogin, async (req, res) => {
+  app.post('/transaction', requireLogin, handleErrors(async (req, res) => {
     let { type, paid, txid } = req.body
     if (!([ 'btc', 'eth' ].includes(type))) {
       let error = 'Type must be "btc" or "eth"'
@@ -92,9 +102,9 @@ module.exports = function (app, models) {
     }
     await Transaction.create(tx)
     res.json({})
-  })
+  }))
 
-  app.post('/wallet', requireLogin, async (req, res) => {
+  app.post('/wallet', requireLogin, handleErrors(async (req, res) => {
     let wallet = {
       encryptedSeed: Buffer(req.body.encryptedSeed, 'base64'),
       salt: Buffer(req.body.salt, 'base64'),
@@ -103,22 +113,22 @@ module.exports = function (app, models) {
     }
     await Wallet.create(wallet)
     res.json({})
-  })
+  }))
 
-  app.get('/transactions', requireLogin, async (req, res) => {
+  app.get('/transactions', requireLogin, handleErrors(async (req, res) => {
     let transactions = await req.user.getTransactions()
     res.json(transactions)
-  })
+  }))
 
-  app.get('/wallets', requireLogin, async (req, res) => {
+  app.get('/wallets', requireLogin, handleErrors(async (req, res) => {
     let wallets = await getWallets(req.user)
     res.json(wallets)
-  })
+  }))
 
-  app.get('/user', requireLogin, async (req, res) => {
+  app.get('/user', requireLogin, handleErrors(async (req, res) => {
     let { email, name, userId } = req.user
     let wallets = await getWallets(req.user)
     let transactions = await req.user.getTransactions()
     res.json({ email, name, userId, wallets, transactions })
-  })
+  }))
 }
