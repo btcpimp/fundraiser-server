@@ -11,6 +11,12 @@ async function hashPassword (password, salt) {
     Buffer(password), salt, 20000, 20, 'sha512')
 }
 
+async function saltAndHashPassword (password) {
+  let passwordSalt = await randomBytes(20)
+  let passwordHash = await hashPassword(password, passwordSalt)
+  return { passwordSalt, passwordHash }
+}
+
 async function getWallets (user) {
   let wallets = await user.getWallets()
   return wallets.map((wallet) => ({
@@ -68,11 +74,38 @@ module.exports = function (app, models) {
   app.post('/register', requireLogout, handleErrors(async (req, res) => {
     let { email, displayName, password } = req.body
     // TODO: validate fields
-    let passwordSalt = await randomBytes(20)
-    let passwordHash = await hashPassword(password, passwordSalt)
+    let { passwordSalt, passwordHash } = await saltAndHashPassword(password)
     let user = await User.create({ email, displayName, passwordSalt, passwordHash })
     req.session.userId = user.id
     req.user = user
+    await getUser(req, res)
+  }))
+
+  // update display name
+  app.post('/name', requireLogin, handleErrors(async (req, res) => {
+    if (!req.body.name) {
+      return res.status(400).json({ error: 'No name given' })
+    }
+    await req.user.update({ displayName: req.body.name })
+    await getUser(req, res)
+  }))
+
+  // update email address
+  app.post('/email', requireLogin, handleErrors(async (req, res) => {
+    if (!req.body.email) {
+      return res.status(400).json({ error: 'No email given' })
+    }
+    await req.user.update({ email: req.body.email })
+    await getUser(req, res)
+  }))
+
+  // update password
+  app.post('/password', requireLogin, handleErrors(async (req, res) => {
+    if (!req.body.password) {
+      return res.status(400).json({ error: 'No password given' })
+    }
+    let saltAndHash = await saltAndHashPassword(req.body.password)
+    await req.user.update(saltAndHash)
     await getUser(req, res)
   }))
 
