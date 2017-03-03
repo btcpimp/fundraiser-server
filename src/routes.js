@@ -4,7 +4,10 @@ const promisify = require('bluebird').promisify
 let { pbkdf2, randomBytes } = require('crypto')
 pbkdf2 = promisify(pbkdf2)
 randomBytes = promisify(randomBytes)
-let { ATOMS_PER_BTC } = require('cosmos-fundraiser').bitcoin
+let { pushTx, ATOMS_PER_BTC } = require('cosmos-fundraiser').bitcoin
+pushTx = promisify(pushTx)
+
+const DEV = process.env.NODE_ENV === 'development'
 
 async function hashPassword (password, salt) {
   return await pbkdf2(
@@ -174,4 +177,12 @@ module.exports = function (app, models) {
   }))
 
   app.get('/user', requireLogin, handleErrors(getUser))
+
+  if (DEV) {
+    app.post('/pushtx', requireLogin, handleErrors(async (req, res) => {
+      let tx = { toHex: () => req.body.hex }
+      let pushTxRes = await pushTx(tx, { testnet: true })
+      res.json(pushTxRes)
+    }))
+  }
 }
