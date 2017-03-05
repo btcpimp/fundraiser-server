@@ -20,22 +20,13 @@ module.exports = function (db) {
     displayName: STRING
   })
 
-  const Transaction = db.define('transaction', {
-    type: STRING,
-    paid: BIGINT,
-    received: BIGINT,
-    address: STRING,
-    txid: unique(BLOB)
-  })
-
   const Wallet = db.define('wallet', {
     encryptedSeed: unique(BLOB),
     salt: BLOB,
     iv: BLOB
   })
 
-  User.hasMany(Transaction)
   User.hasMany(Wallet)
 
-  return { User, Transaction, Wallet }
+  return { User, Wallet }
 }
