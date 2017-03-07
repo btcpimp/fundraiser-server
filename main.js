@@ -27,13 +27,13 @@ async function main () {
   const app = express()
   app.use(helmet())
   app.use(cors({
-    origin: DEV ? 'http://localhost:8600' : config.allowOrigin,
+    origin: config.allowOrigin || 'http://localhost:8600',
     credentials: true
   }))
   app.use(session({
     secret: config.cookieSecret,
     store: new SessionStore({ db }),
-    cookie: { secure: !DEV },
+    cookie: { secure: !DEV, sameSite: false },
     name: 'session'
   }))
   app.use(bodyParser.json())
