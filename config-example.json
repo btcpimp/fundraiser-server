@@ -1,5 +1,6 @@
 {
-  "db": "postgres://user@localhost/database",
+  "db": "postgres://user:password@localhost/database",
   "port": 8000,
-  "cookieSecret": ""
+  "cookieSecret": "",
+  "allowOrigin": "https://your-static-website-origin.com"
 }
