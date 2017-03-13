@@ -2,13 +2,5 @@
 
 **Cosmos Fundraiser backend**
 
-This server stores info about fundraiser contributors (transactions and wallet backups).
+This service runs on Amazon Lambda, and provides an endpoint which sends emails to users containing encrypted wallet files as a backup.
 
-## Usage
-
-```bash
-npm install
-cp config-example.json config.json # create config file
-vim config.json # edit config file
-npm start # start server
-```
