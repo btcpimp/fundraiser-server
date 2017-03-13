@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "exec": "source .env && node-lambda run",
+    "deploy": "source .env && node-lambda deploy -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_KEY -o $AWS_ROLE_ARN"
   },
   "author": "Matt Bell <mappum@gmail.com>",
   "license": "Apache-2.0",
