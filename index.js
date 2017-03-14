@@ -3,41 +3,53 @@
 const aws = require('aws-sdk')
 const createEmail = require('mailcomposer')
 
-aws.config.region = process.env.AWS_REGION
-aws.config.credentials = {
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_KEY
-}
 const ses = new aws.SES()
 
 const from = 'Cosmos Team <matt@tendermint.com>'
-const to = 'mappum@gmail.com' // TODO: get from body
-
 const subject = 'Your Cosmos Wallet - DO NOT LOSE THIS!'
 const text = `
-TODO: text body
+Thank you for participating in the Cosmos Fundraiser.
+
+Attached is your encrypted wallet file, which you will need in the future to access your Cosmos Atoms. Store this somewhere where you won't lose it. It's a good idea to keep it saved on multiple devices.
+
+Also, remember not to lose your password. If you forget your password or lose your wallet, you will not be able to recover your Atoms!
+
+- The Cosmos Team
 `
 const html = `
-<span><strong>TODO:</strong> HTML body</span>
+<h2>Thank you for participating in the Cosmos Fundraiser</h2>
+<p>
+  Attached is your encrypted wallet file, which you will need in the future to access your Cosmos Atoms. Store this somewhere where you won't lose it. It's a good idea to keep it saved on multiple devices.
+</p>
+<p>
+  Also, remember to keep your password written down somewhere. <strong>If you forget your password or lose your wallet, you will not be able to recover your Atoms!</strong>
+</p>
+<p>
+  <i>- The Cosmos Team</i>
+</p>
 `
 
 exports.handler = (event, context, cb) => {
+  if (event.wallet.length > 200) {
+    console.log('Wallet is too big. length=' + event.wallet.length)
+    return cb(Error())
+  }
   createEmail({
     from,
-    to,
+    to: event.emailAddress,
     subject,
     text,
     html,
     attachments: [{
-      filename: 'text1.txt',
-      content: 'hello world!'
+      filename: 'cosmos_fundraiser.wallet',
+      content: Buffer(event.wallet, 'base64')
     }]
   }).build((err, data) => {
     if (err) return cb(err)
     ses.sendRawEmail({ RawMessage: { Data: data } }, (err, res) => {
       if (err) return cb(err)
       console.log('Email sent:', res)
-      cb(null, 'OK')
+      cb(null, '{}')
     })
   })
 }
